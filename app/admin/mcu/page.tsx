@@ -1,10 +1,5 @@
-"use client"
-
 import Link from "next/link"
-import { useState } from "react"
-
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
+import { supabase } from "@/lib/supabase"
 
 import {
   Card,
@@ -22,138 +17,88 @@ import {
   TableRow
 } from "@/components/ui/table"
 
-const mcuData = [
-  {
-    id: "MCU-001",
-    patient: "Budi Santoso",
-    patientId: "P001",
-    date: "2026-03-26",
-    status: "draft",
-    doctor: "dr. Andi"
-  },
-  {
-    id: "MCU-002",
-    patient: "Siti Rahma",
-    patientId: "P002",
-    date: "2026-03-25",
-    status: "approved",
-    doctor: "dr. Budi"
-  }
-]
+import { Button } from "@/components/ui/button"
 
-// 🔥 lebih realistis
+// 🔥 status mapping tetap dipakai
 function getStatusConfig(status: string) {
   switch (status) {
     case "draft":
       return {
         label: "Draft",
-        class: "bg-yellow-100 text-yellow-700 border border-yellow-200"
-      }
-    case "submitted":
-      return {
-        label: "Menunggu Review",
-        class: "bg-blue-100 text-blue-700 border border-blue-200"
+        class: "bg-yellow-100 text-yellow-700"
       }
     case "approved":
       return {
         label: "Selesai",
-        class: "bg-green-100 text-green-700 border border-green-200"
+        class: "bg-green-100 text-green-700"
       }
     default:
       return {
-        label: "-",
-        class: "bg-gray-100 text-gray-600"
+        label: "Selesai",
+        class: "bg-green-100 text-green-700"
       }
   }
 }
 
-export default function MCUPage() {
-  const [search, setSearch] = useState("")
-  const [statusFilter, setStatusFilter] = useState("")
+// 🔥 ambil data dari DB
+async function getMcuList() {
+  const { data, error } = await supabase
+    .from("mcu")
+    .select("*")
+    .order("created_at", { ascending: false })
 
-  // 🔥 filter simple (nanti ganti server-side)
-  const filteredData = mcuData.filter((item) => {
-    const matchSearch = item.patient
-      .toLowerCase()
-      .includes(search.toLowerCase())
+  if (error) {
+    console.error(error)
+    return []
+  }
 
-    const matchStatus = statusFilter
-      ? item.status === statusFilter
-      : true
+  return data
+}
 
-    return matchSearch && matchStatus
-  })
+export default async function MCUPage() {
+  const mcuData = await getMcuList()
 
   return (
     <div className="p-6 space-y-6 bg-slate-50 min-h-screen">
 
-      {/* Header */}
+      {/* HEADER */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-slate-800">
+          <h1 className="text-2xl font-semibold text-slate-800">
             MCU Records
           </h1>
           <p className="text-sm text-slate-500">
-            Kelola data medical check up
+            Data Medical Check Up
           </p>
         </div>
 
-        {/* 🔥 FIX: arahkan ke pasien dulu */}
-        <Button className="bg-blue-600 hover:bg-blue-700 text-white" asChild>
-          <Link href="/admin/patients">
-            Pilih Pasien
+        <Button asChild>
+          <Link href="/admin/patients/create">
+            + Tambah Pasien
           </Link>
         </Button>
       </div>
 
-      {/* Filter */}
-      <Card className="border border-slate-200 shadow-sm">
-        <CardContent className="p-4 flex flex-col md:flex-row gap-3">
-
-          <Input
-            placeholder="Cari nama pasien..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-
-          <Input type="date" />
-
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="border border-slate-200 rounded-md px-3 py-2 text-sm bg-white"
-          >
-            <option value="">Semua Status</option>
-            <option value="draft">Draft</option>
-            <option value="submitted">Menunggu Review</option>
-            <option value="approved">Selesai</option>
-          </select>
-
-        </CardContent>
-      </Card>
-
-      {/* Table */}
-      <Card className="border border-slate-200 shadow-sm">
-
+      {/* TABLE */}
+      <Card>
         <CardHeader>
           <CardTitle>Daftar MCU</CardTitle>
         </CardHeader>
 
         <CardContent>
 
-          {filteredData.length === 0 ? (
-            <div className="text-center py-10 text-sm text-slate-500">
-              Tidak ada data MCU
-            </div>
+          {mcuData.length === 0 ? (
+            <p className="text-center text-sm text-slate-500 py-10">
+              Belum ada data
+            </p>
           ) : (
             <Table>
 
               <TableHeader>
                 <TableRow>
-                  <TableHead>Kode</TableHead>
-                  <TableHead>Pasien</TableHead>
+                  <TableHead>NIK</TableHead>
+                  <TableHead>Nama</TableHead>
                   <TableHead>Tanggal</TableHead>
-                  <TableHead>Dokter</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead className="text-right">
                     Aksi
@@ -162,35 +107,27 @@ export default function MCUPage() {
               </TableHeader>
 
               <TableBody>
-                {filteredData.map((item) => {
-                  const status = getStatusConfig(item.status)
+                {mcuData.map((item) => {
+                  const data = item.data
+                  const status = getStatusConfig("approved")
 
                   return (
-                    <TableRow
-                      key={item.id}
-                      className="hover:bg-slate-50 transition"
-                    >
+                    <TableRow key={item.id}>
 
-                      <TableCell className="text-slate-500 text-xs">
-                        {item.id}
+                      <TableCell className="text-xs text-slate-500">
+                        {item.nik}
                       </TableCell>
 
-                      <TableCell className="font-medium text-slate-800">
-                        {item.patient}
-                      </TableCell>
-
-                      <TableCell className="text-slate-600">
-                        {item.date}
-                      </TableCell>
-
-                      <TableCell className="text-slate-600">
-                        {item.doctor}
+                      <TableCell className="font-medium">
+                        {data?.identitas?.nama}
                       </TableCell>
 
                       <TableCell>
-                        <span
-                          className={`px-2.5 py-1 rounded-md text-xs font-medium ${status.class}`}
-                        >
+                        {item.created_at?.split("T")[0]}
+                      </TableCell>
+
+                      <TableCell>
+                        <span className={`px-2 py-1 text-xs rounded ${status.class}`}>
                           {status.label}
                         </span>
                       </TableCell>
@@ -198,18 +135,16 @@ export default function MCUPage() {
                       <TableCell className="text-right space-x-2">
 
                         <Button size="sm" variant="outline" asChild>
-                          <Link href={`/admin/mcu/${item.id}`}>
-                            Detail
+                          <Link href={`/patients/result/${item.access_token}`}>
+                            Lihat
                           </Link>
                         </Button>
 
-                        {item.status !== "approved" && (
-                          <Button size="sm" asChild>
-                            <Link href={`/admin/mcu/edit/${item.id}`}>
-                              Edit
-                            </Link>
-                          </Button>
-                        )}
+                        <Button size="sm" asChild>
+                          <Link href={`/admin/edit/${item.id}`}>
+                            Edit
+                          </Link>
+                        </Button>
 
                       </TableCell>
 
@@ -222,7 +157,6 @@ export default function MCUPage() {
           )}
 
         </CardContent>
-
       </Card>
 
     </div>
