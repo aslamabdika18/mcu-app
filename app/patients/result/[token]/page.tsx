@@ -1,39 +1,61 @@
-import { getMcuByToken } from "@/lib/mcu"
-import { notFound } from "next/navigation"
-import { MCUData, PemeriksaanItem } from "@/types/mcu"
+import { getMcuByToken } from "@/lib/mcu";
+import { notFound } from "next/navigation";
+import { MCUData, PemeriksaanItem } from "@/types/mcu";
+import jsPDF from "jspdf";
+import html2canvas from "html2canvas";
 
 export default async function ResultPage({
   params,
 }: {
-  params: Promise<{ token: string }>
+  params: Promise<{ token: string }>;
 }) {
-  const { token } = await params
+  const { token } = await params;
 
-  const record = await getMcuByToken(token)
-  if (!record) return notFound()
+  const record = await getMcuByToken(token);
+  if (!record) return notFound();
 
-  const data = record.data as MCUData
+  const data = record.data as MCUData;
 
-  type Key = keyof MCUData["pemeriksaanFisik"]
+  type Key = keyof MCUData["pemeriksaanFisik"];
 
   const entries = Object.entries(data.pemeriksaanFisik) as [
     Key,
-    PemeriksaanItem
-  ][]
+    PemeriksaanItem,
+  ][];
+
+  const handleDownloadPdf = async () => {
+    const element = document.getElementById("mcu-result");
+
+    if (!element) return;
+
+    const canvas = await html2canvas(element, {
+      scale: 2,
+    });
+
+    const imgData = canvas.toDataURL("image/png");
+
+    const pdf = new jsPDF("p", "mm", "a4");
+
+    const width = 210;
+    const height = (canvas.height * width) / canvas.width;
+
+    pdf.addImage(imgData, "PNG", 0, 0, width, height);
+    pdf.save("hasil-mcu.pdf");
+  };
 
   // 🔥 kita pakai ini sekarang (tidak redundant lagi)
-  const abnormalEntries = entries.filter(([, i]) => i.status === "Abnormal")
+  const abnormalEntries = entries.filter(([, i]) => i.status === "Abnormal");
 
-  const hasAbnormal = abnormalEntries.length > 0
+  const hasAbnormal = abnormalEntries.length > 0;
 
   return (
-    <div className="max-w-3xl mx-auto bg-white p-8 text-sm leading-relaxed">
-
+    <div
+      id="mcu-result"
+      className="max-w-3xl mx-auto bg-white p-8 text-sm leading-relaxed"
+    >
       {/* HEADER */}
       <div className="text-center mb-6">
-        <h1 className="font-bold text-lg">
-          RUMAH SAKIT TK. II ISKANDAR MUDA
-        </h1>
+        <h1 className="font-bold text-lg">RUMAH SAKIT TK. II ISKANDAR MUDA</h1>
         <p className="font-semibold">MEDICAL CHECK UP</p>
 
         <p className="mt-2 text-sm">
@@ -48,6 +70,14 @@ export default async function ResultPage({
             {hasAbnormal ? "Perlu Perhatian" : "Normal"}
           </span>
         </p>
+        <div className="flex justify-end mb-4">
+          <button
+            onClick={handleDownloadPdf}
+            className="px-4 py-2 bg-blue-600 text-white rounded"
+          >
+            Download PDF
+          </button>
+        </div>
       </div>
 
       {/* IDENTITAS */}
@@ -55,30 +85,40 @@ export default async function ResultPage({
         <h2 className="font-bold border-b pb-1 mb-2">I. IDENTITAS</h2>
 
         <div className="grid grid-cols-2 gap-y-1">
-          <p>Nama</p><p>: {data.identitas.nama}</p>
-          <p>Jenis Kelamin</p><p>: {data.identitas.jenisKelamin}</p>
-          <p>TTL</p><p>: {data.identitas.ttl}</p>
-          <p>Alamat</p><p>: {data.identitas.alamat}</p>
-          <p>No HP</p><p>: {data.identitas.noHp}</p>
-          <p>Agama</p><p>: {data.identitas.agama}</p>
-          <p>BB/TB</p><p>: {data.identitas.bbTb}</p>
-          <p>Gol Darah</p><p>: {data.identitas.golDarah}</p>
+          <p>Nama</p>
+          <p>: {data.identitas.nama}</p>
+          <p>Jenis Kelamin</p>
+          <p>: {data.identitas.jenisKelamin}</p>
+          <p>TTL</p>
+          <p>: {data.identitas.ttl}</p>
+          <p>Alamat</p>
+          <p>: {data.identitas.alamat}</p>
+          <p>No HP</p>
+          <p>: {data.identitas.noHp}</p>
+          <p>Agama</p>
+          <p>: {data.identitas.agama}</p>
+          <p>BB/TB</p>
+          <p>: {data.identitas.bbTb}</p>
+          <p>Gol Darah</p>
+          <p>: {data.identitas.golDarah}</p>
         </div>
       </div>
 
       {/* PEMERIKSAAN FISIK */}
       <div className="mb-6">
-        <h2 className="font-bold border-b pb-1 mb-2">
-          II. PEMERIKSAAN FISIK
-        </h2>
+        <h2 className="font-bold border-b pb-1 mb-2">II. PEMERIKSAAN FISIK</h2>
 
         <p className="font-semibold">Tanda Vital</p>
 
         <div className="grid grid-cols-2 gap-y-1 mt-2">
-          <p>Tekanan Darah</p><p>: {data.tandaVital.tekananDarah}</p>
-          <p>Nadi</p><p>: {data.tandaVital.nadi}</p>
-          <p>Respirasi</p><p>: {data.tandaVital.respirasi}</p>
-          <p>Suhu</p><p>: {data.tandaVital.suhu}</p>
+          <p>Tekanan Darah</p>
+          <p>: {data.tandaVital.tekananDarah}</p>
+          <p>Nadi</p>
+          <p>: {data.tandaVital.nadi}</p>
+          <p>Respirasi</p>
+          <p>: {data.tandaVital.respirasi}</p>
+          <p>Suhu</p>
+          <p>: {data.tandaVital.suhu}</p>
         </div>
       </div>
 
@@ -109,9 +149,7 @@ export default async function ResultPage({
                   {item.status}
                 </td>
 
-                <td className="border p-1">
-                  {item.keterangan || "-"}
-                </td>
+                <td className="border p-1">{item.keterangan || "-"}</td>
               </tr>
             ))}
           </tbody>
@@ -137,9 +175,7 @@ export default async function ResultPage({
 
       {/* KESIMPULAN */}
       <div className="mb-6">
-        <h2 className="font-bold border-b pb-1 mb-2">
-          KESIMPULAN
-        </h2>
+        <h2 className="font-bold border-b pb-1 mb-2">KESIMPULAN</h2>
 
         <ol className="list-decimal ml-5">
           {data.kesimpulan.map((k, i) => (
@@ -150,9 +186,7 @@ export default async function ResultPage({
 
       {/* SARAN */}
       <div className="mb-6">
-        <h2 className="font-bold border-b pb-1 mb-2">
-          SARAN
-        </h2>
+        <h2 className="font-bold border-b pb-1 mb-2">SARAN</h2>
 
         <ol className="list-decimal ml-5">
           {data.saran.map((s, i) => (
@@ -167,5 +201,5 @@ export default async function ResultPage({
         <p className="mt-8 font-semibold">Dokter Pemeriksa</p>
       </div>
     </div>
-  )
+  );
 }

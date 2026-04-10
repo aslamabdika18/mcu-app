@@ -3,7 +3,6 @@
 import Link from "next/link"
 import {
   LayoutDashboard,
-  Users,
   FileText
 } from "lucide-react"
 
@@ -23,11 +22,6 @@ const items = [
     title: "Dashboard",
     url: "/admin",
     icon: LayoutDashboard,
-  },
-  {
-    title: "Patients",
-    url: "/admin/patients",
-    icon: Users,
   },
   {
     title: "MCU Records",

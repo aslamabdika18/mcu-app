@@ -59,3 +59,47 @@ export async function getMcuByToken(
 
   return data as McuRecord
 }
+
+export async function updateMcu(
+  id: string,
+  dto: CreateMcuDTO
+) {
+  const { data, error } = await supabase
+    .from("mcu")
+    .update({
+      nik: dto.nik,
+      ttl: dto.ttl,
+      email: dto.email,
+      data: dto.data,
+    })
+    .eq("id", id)
+    .select()
+    .single()
+
+  if (error) throw new Error(error.message)
+
+  return data
+}
+
+export async function getMcuById(id: string) {
+  const { data, error } = await supabase
+    .from("mcu")
+    .select("*")
+    .eq("id", id)
+    .single()
+
+  if (error) return null
+
+  return data
+}
+
+export async function deleteMcu(id: string) {
+  const { error } = await supabase
+    .from("mcu")
+    .delete()
+    .eq("id", id)
+
+  if (error) throw new Error(error.message)
+
+  return true
+}
