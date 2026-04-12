@@ -1,5 +1,10 @@
 "use client"
 
+import { useState } from "react"
+import { useRouter } from "next/navigation"
+import { supabase } from "@/lib/supabase"
+import { toast } from "sonner"
+
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -15,8 +20,43 @@ import {
 import { Activity } from "lucide-react"
 
 export default function LoginPage() {
-  return (
+  const router = useRouter()
 
+  const [email, setEmail] = useState("")
+  const [password, setPassword] = useState("")
+  const [loading, setLoading] = useState(false)
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault()
+
+    if (!email || !password) {
+      toast.error("Email dan password wajib diisi")
+      return
+    }
+
+    setLoading(true)
+
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password
+    })
+
+    setLoading(false)
+
+    if (error) {
+      toast.error("Email atau password salah")
+      return
+    }
+
+    toast.success("Login berhasil")
+
+    // delay dikit biar toast keliatan
+    setTimeout(() => {
+      router.push("/admin")
+    }, 800)
+  }
+
+  return (
     <div className="min-h-screen grid md:grid-cols-2">
 
       {/* Left Section */}
@@ -58,13 +98,15 @@ export default function LoginPage() {
 
           <CardContent>
 
-            <form className="space-y-4">
+            <form className="space-y-4" onSubmit={handleLogin}>
 
               <div className="space-y-2">
                 <Label>Email</Label>
                 <Input
                   type="email"
-                  placeholder="admin@email.com"
+                  placeholder="admin@gmail.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                 />
               </div>
 
@@ -73,11 +115,13 @@ export default function LoginPage() {
                 <Input
                   type="password"
                   placeholder="********"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
                 />
               </div>
 
-              <Button className="w-full">
-                Login
+              <Button className="w-full" disabled={loading}>
+                {loading ? "Loading..." : "Login"}
               </Button>
 
             </form>
@@ -89,6 +133,5 @@ export default function LoginPage() {
       </div>
 
     </div>
-
   )
 }

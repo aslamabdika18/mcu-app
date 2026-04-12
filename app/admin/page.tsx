@@ -1,7 +1,9 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import CountUp from "react-countup"
-import { Users, FileText, Clock, TrendingUp } from "lucide-react"
+import { Users, FileText, Clock } from "lucide-react"
+import { supabase } from "@/lib/supabase"
 
 import {
   Card,
@@ -10,7 +12,35 @@ import {
   CardTitle
 } from "@/components/ui/card"
 
+type MCU = {
+  status: string
+}
+
 export default function AdminDashboard() {
+  const [total, setTotal] = useState(0)
+  const [approved, setApproved] = useState(0)
+  const [pending, setPending] = useState(0)
+
+  useEffect(() => {
+    const fetchData = async () => {
+      const { data } = await supabase.from("mcu").select("status")
+
+      if (!data) return
+
+      const totalData = data.length
+      const approvedData = data.filter(i => i.status === "approved").length
+      const pendingData = totalData - approvedData
+
+      setTotal(totalData)
+      setApproved(approvedData)
+      setPending(pendingData)
+    }
+
+    fetchData()
+  }, [])
+
+  const percent = total > 0 ? Math.round((approved / total) * 100) : 0
+
   return (
     <div className="p-6 space-y-6 bg-slate-50 min-h-screen">
 
@@ -27,118 +57,65 @@ export default function AdminDashboard() {
       {/* Stats */}
       <div className="grid gap-6 md:grid-cols-3">
 
-        {/* Total Patients */}
-        <Card className="border border-slate-200 shadow-sm">
+        <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-slate-600">
-              Total Patients
-            </CardTitle>
+            <CardTitle className="text-sm">Total Data MCU</CardTitle>
             <Users className="h-5 w-5 text-blue-600" />
           </CardHeader>
-
           <CardContent>
-            <p className="text-3xl font-bold text-slate-800">
-              <CountUp end={120} duration={1.5} />
-            </p>
-            <p className="text-xs text-slate-500 mt-1">
-              +12 dari bulan lalu
+            <p className="text-3xl font-bold">
+              <CountUp end={total} />
             </p>
           </CardContent>
         </Card>
 
-        {/* MCU Results */}
-        <Card className="border border-slate-200 shadow-sm">
+        <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-slate-600">
-              MCU Completed
-            </CardTitle>
+            <CardTitle className="text-sm">MCU Approved</CardTitle>
             <FileText className="h-5 w-5 text-green-600" />
           </CardHeader>
-
           <CardContent>
-            <p className="text-3xl font-bold text-slate-800">
-              <CountUp end={98} duration={1.5} />
-            </p>
-            <p className="text-xs text-slate-500 mt-1">
-              82% dari total pasien
+            <p className="text-3xl font-bold">
+              <CountUp end={approved} />
             </p>
           </CardContent>
         </Card>
 
-        {/* Pending */}
-        <Card className="border border-slate-200 shadow-sm">
+        <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-slate-600">
-              Pending Review
-            </CardTitle>
+            <CardTitle className="text-sm">Pending</CardTitle>
             <Clock className="h-5 w-5 text-yellow-600" />
           </CardHeader>
-
           <CardContent>
-            <p className="text-3xl font-bold text-slate-800">
-              <CountUp end={22} duration={1.5} />
-            </p>
-            <p className="text-xs text-slate-500 mt-1">
-              Perlu tindakan segera
+            <p className="text-3xl font-bold">
+              <CountUp end={pending} />
             </p>
           </CardContent>
         </Card>
 
       </div>
 
-      {/* Extra Insight */}
-      <div className="grid gap-6 md:grid-cols-2">
+      {/* Progress */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-sm text-slate-600">
+            Progress MCU
+          </CardTitle>
+        </CardHeader>
 
-        {/* Progress */}
-        <Card className="border border-slate-200 shadow-sm">
-          <CardHeader>
-            <CardTitle className="text-sm text-slate-600">
-              Progress MCU
-            </CardTitle>
-          </CardHeader>
+        <CardContent>
+          <div className="w-full bg-slate-200 rounded-full h-3">
+            <div
+              className="bg-blue-600 h-3 rounded-full transition-all"
+              style={{ width: `${percent}%` }}
+            />
+          </div>
 
-          <CardContent>
-            <div className="w-full bg-slate-200 rounded-full h-3">
-              <div
-                className="bg-blue-600 h-3 rounded-full"
-                style={{ width: "82%" }}
-              />
-            </div>
-            <p className="text-xs text-slate-500 mt-2">
-              82% pasien sudah selesai MCU
-            </p>
-          </CardContent>
-        </Card>
-
-        {/* Activity */}
-        <Card className="border border-slate-200 shadow-sm">
-          <CardHeader>
-            <CardTitle className="text-sm text-slate-600">
-              Aktivitas Terbaru
-            </CardTitle>
-          </CardHeader>
-
-          <CardContent className="space-y-3 text-sm">
-
-            <div className="flex justify-between">
-              <span>Budi - MCU selesai</span>
-              <span className="text-slate-400">10:21</span>
-            </div>
-
-            <div className="flex justify-between">
-              <span>Siti - Input data</span>
-              <span className="text-slate-400">09:45</span>
-            </div>
-
-            <div className="flex justify-between">
-              <span>Andi - Pending review</span>
-              <span className="text-slate-400">08:30</span>
-            </div>
-
-          </CardContent>
-        </Card>
-
-      </div>
+          <p className="text-xs text-slate-500 mt-2">
+            {percent}% pasien sudah selesai MCU
+          </p>
+        </CardContent>
+      </Card>
 
     </div>
   )
