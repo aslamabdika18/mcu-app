@@ -2,15 +2,11 @@
 
 import { useEffect, useState } from "react"
 import { getMcuByToken } from "@/lib/mcu"
-import { MCUData, PemeriksaanItem } from "@/types/mcu"
+import { MCUData, PemeriksaanItem, McuRecord } from "@/types/mcu"
 import { useParams } from "next/navigation"
 import jsPDF from "jspdf"
 import html2canvas from "html2canvas"
-
-type McuRecord = {
-  data: MCUData
-  approved_at?: string
-}
+import { toast } from "sonner"
 
 export default function ResultPage() {
   const params = useParams()
@@ -44,63 +40,78 @@ export default function ResultPage() {
   const abnormalEntries = entries.filter(([, i]) => i.status === "Abnormal")
   const hasAbnormal = abnormalEntries.length > 0
 
-  // 🔥 FORMAT TANGGAL
-  const approvedDate = record.approved_at
-    ? new Date(record.approved_at).toLocaleDateString("id-ID", {
-        day: "2-digit",
-        month: "long",
-        year: "numeric",
-      })
+  // 🔥 FIX TANGGAL (INI YANG BENAR)
+  const dateSource = record.updated_at || record.approved_at
+
+  const approvedDate = dateSource
+    ? new Date(dateSource).toLocaleDateString("id-ID", {
+      day: "2-digit",
+      month: "long",
+      year: "numeric",
+    })
     : "-"
 
-  // 🔥 DOWNLOAD PDF FIX TOTAL
+  // 🔥 DOWNLOAD PDF FIX
   const handleDownloadPdf = async () => {
-    const element = document.getElementById("mcu-result")
-    if (!element) return
+    try {
+      const element = document.getElementById("mcu-result")
 
-    const canvas = await html2canvas(element, {
-      scale: 3,
-      useCORS: true,
-    })
+      if (!element) {
+        toast.error("Konten tidak ditemukan")
+        return
+      }
 
-    const imgData = canvas.toDataURL("image/png")
+      // 🔥 tunggu render stabil
+      await new Promise((resolve) => setTimeout(resolve, 300))
 
-    const pdf = new jsPDF("p", "mm", "a4")
+      const canvas = await html2canvas(element, {
+        scale: 2, // 🔥 turunin (biar stabil)
+        useCORS: true,
+        logging: false,
+      })
 
-    const pageWidth = 210
-    const pageHeight = 297
+      const imgData = canvas.toDataURL("image/png")
 
-    const imgWidth = pageWidth
-    const imgHeight = (canvas.height * imgWidth) / canvas.width
+      const pdf = new jsPDF("p", "mm", "a4")
 
-    let heightLeft = imgHeight
-    let position = 0
+      const pageWidth = 210
+      const pageHeight = 297
 
-    pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight)
-    heightLeft -= pageHeight
+      const imgWidth = pageWidth
+      const imgHeight = (canvas.height * imgWidth) / canvas.width
 
-    while (heightLeft > 0) {
-      position = heightLeft - imgHeight
-      pdf.addPage()
+      let heightLeft = imgHeight
+      let position = 0
+
       pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight)
       heightLeft -= pageHeight
-    }
 
-    pdf.save(`hasil-mcu-${data.identitas.nama}.pdf`)
+      while (heightLeft > 0) {
+        position = heightLeft - imgHeight
+        pdf.addPage()
+        pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight)
+        heightLeft -= pageHeight
+      }
+
+      pdf.save(`hasil-mcu-${data.identitas.nama}.pdf`)
+
+    } catch (err) {
+      console.error("PDF ERROR:", err)
+      toast.error("Gagal membuat PDF")
+    }
   }
 
   return (
     <div className="p-6 bg-gray-100 min-h-screen">
 
       {/* BUTTON */}
-      <div className="max-w-3xl mx-auto mb-4 flex justify-end">
-        <button
-          onClick={handleDownloadPdf}
-          className="px-4 py-2 bg-blue-600 text-white rounded"
-        >
-          Download PDF
-        </button>
-      </div>
+      <button
+        onClick={handleDownloadPdf}
+        disabled={!record}
+        className="px-4 py-2 bg-blue-600 text-white rounded disabled:opacity-50"
+      >
+        Download PDF
+      </button>
 
       {/* CONTENT */}
       <div
@@ -163,11 +174,10 @@ export default function ResultPage() {
               {entries.map(([key, item], i) => (
                 <tr key={i}>
                   <td className="border p-1 capitalize">{key}</td>
-                  <td className={`border p-1 ${
-                    item.status === "Abnormal"
-                      ? "text-red-600 font-semibold"
-                      : "text-green-600"
-                  }`}>
+                  <td className={`border p-1 ${item.status === "Abnormal"
+                    ? "text-red-600 font-semibold"
+                    : "text-green-600"
+                    }`}>
                     {item.status}
                   </td>
                   <td className="border p-1">{item.keterangan || "-"}</td>

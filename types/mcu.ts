@@ -46,8 +46,16 @@ export interface MCUData {
 
   kesimpulan: string[]
   saran: string[]
-
   doctorName?: string
+}
+
+export interface McuRecord {
+  id: string
+  nik: string
+  email: string
+  data: MCUData
+  approved_at?: string
+  updated_at?: string
 }
 
 export interface CreateMcuDTO {

@@ -8,53 +8,87 @@ import { toast } from "sonner"
 import { MCUData } from "@/types/mcu"
 import { McuForm } from "@/components/admin/mcu-form"
 
-export default function EditPage(){
-  const router=useRouter()
-  const {id}=useParams()
+export default function EditPage() {
+  const router = useRouter()
+  const params = useParams()
 
-  const [data,setData]=useState<MCUData|null>(null)
-  const [nik,setNik]=useState("")
-  const [email,setEmail]=useState("")
+  const id = params.id as string
 
-  useEffect(()=>{
-    const fetch=async()=>{
-      const {data:res}=await supabase.from("mcu").select("*").eq("id",id).single()
+  const [data, setData] = useState<MCUData | null>(null)
+  const [nik, setNik] = useState("")
+  const [email, setEmail] = useState("")
+  const [loading, setLoading] = useState(false)
 
-      if(!res){router.push("/admin/mcu");return}
+  // ======================
+  useEffect(() => {
+    const fetch = async () => {
+      const { data: res, error } = await supabase
+        .from("mcu")
+        .select("*")
+        .eq("id", id)
+        .single()
+
+      if (error || !res) {
+        toast.error("Data tidak ditemukan")
+        router.push("/admin/mcu")
+        return
+      }
 
       setData(res.data)
       setNik(res.nik)
       setEmail(res.email)
     }
 
-    fetch()
-  },[id,router])
+    if (id) fetch()
+  }, [id, router])
 
-  if(!data)return<div>Loading...</div>
+  if (!data) return <div>Loading...</div>
 
-  const handleUpdate=async({data,nik,email}:{data:MCUData,nik:string,email:string})=>{
-    const promise=(async()=>{
-      const {error}=await supabase.from("mcu").update({
-        nik,email,ttl:data.identitas.ttl,data
-      }).eq("id",id)
+  // ======================
+  const handleUpdate = async ({
+    data,
+    nik,
+    email,
+  }: {
+    data: MCUData
+    nik: string
+    email: string
+  }) => {
+    setLoading(true)
 
-      if(error) throw error
-    })()
+    try {
+      const { error } = await supabase
+        .from("mcu")
+        .update({
+          nik,
+          email,
+          ttl: data.identitas.ttl,
+          data,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", id)
 
-    toast.promise(promise,{
-      loading:"Updating...",
-      success:()=>{router.push("/admin/mcu");return"Updated"},
-      error:"Error"
-    })
+      if (error) throw error
+
+      toast.success("Berhasil diupdate")
+      router.push("/admin/mcu")
+
+    } catch (err) {
+      console.error(err)
+      toast.error("Gagal update")
+    } finally {
+      setLoading(false)
+    }
   }
 
+  // ======================
   return (
     <McuForm
       initialData={data}
       nik={nik}
       email={email}
       onSubmit={handleUpdate}
-      submitLabel="Update MCU"
+      submitLabel={loading ? "Updating..." : "Update MCU"}
     />
   )
 }
