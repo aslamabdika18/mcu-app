@@ -46,6 +46,8 @@ export interface MCUData {
 
   kesimpulan: string[]
   saran: string[]
+
+  doctorName?: string
 }
 
 export interface CreateMcuDTO {

@@ -1,205 +1,196 @@
-import { getMcuByToken } from "@/lib/mcu";
-import { notFound } from "next/navigation";
-import { MCUData, PemeriksaanItem } from "@/types/mcu";
-import jsPDF from "jspdf";
-import html2canvas from "html2canvas";
+"use client"
 
-export default async function ResultPage({
-  params,
-}: {
-  params: Promise<{ token: string }>;
-}) {
-  const { token } = await params;
+import { useEffect, useState } from "react"
+import { getMcuByToken } from "@/lib/mcu"
+import { MCUData, PemeriksaanItem } from "@/types/mcu"
+import { useParams } from "next/navigation"
+import jsPDF from "jspdf"
+import html2canvas from "html2canvas"
 
-  const record = await getMcuByToken(token);
-  if (!record) return notFound();
+type McuRecord = {
+  data: MCUData
+  approved_at?: string
+}
 
-  const data = record.data as MCUData;
+export default function ResultPage() {
+  const params = useParams()
+  const token = params.token as string
 
-  type Key = keyof MCUData["pemeriksaanFisik"];
+  const [record, setRecord] = useState<McuRecord | null>(null)
+
+  useEffect(() => {
+    const fetchData = async () => {
+      const res = await getMcuByToken(token)
+      if (!res) return
+      setRecord(res)
+    }
+
+    fetchData()
+  }, [token])
+
+  if (!record) {
+    return <div className="p-10 text-center">Loading...</div>
+  }
+
+  const data = record.data
+
+  type Key = keyof MCUData["pemeriksaanFisik"]
 
   const entries = Object.entries(data.pemeriksaanFisik) as [
     Key,
-    PemeriksaanItem,
-  ][];
+    PemeriksaanItem
+  ][]
 
+  const abnormalEntries = entries.filter(([, i]) => i.status === "Abnormal")
+  const hasAbnormal = abnormalEntries.length > 0
+
+  // 🔥 FORMAT TANGGAL
+  const approvedDate = record.approved_at
+    ? new Date(record.approved_at).toLocaleDateString("id-ID", {
+        day: "2-digit",
+        month: "long",
+        year: "numeric",
+      })
+    : "-"
+
+  // 🔥 DOWNLOAD PDF FIX TOTAL
   const handleDownloadPdf = async () => {
-    const element = document.getElementById("mcu-result");
-
-    if (!element) return;
+    const element = document.getElementById("mcu-result")
+    if (!element) return
 
     const canvas = await html2canvas(element, {
-      scale: 2,
-    });
+      scale: 3,
+      useCORS: true,
+    })
 
-    const imgData = canvas.toDataURL("image/png");
+    const imgData = canvas.toDataURL("image/png")
 
-    const pdf = new jsPDF("p", "mm", "a4");
+    const pdf = new jsPDF("p", "mm", "a4")
 
-    const width = 210;
-    const height = (canvas.height * width) / canvas.width;
+    const pageWidth = 210
+    const pageHeight = 297
 
-    pdf.addImage(imgData, "PNG", 0, 0, width, height);
-    pdf.save("hasil-mcu.pdf");
-  };
+    const imgWidth = pageWidth
+    const imgHeight = (canvas.height * imgWidth) / canvas.width
 
-  // 🔥 kita pakai ini sekarang (tidak redundant lagi)
-  const abnormalEntries = entries.filter(([, i]) => i.status === "Abnormal");
+    let heightLeft = imgHeight
+    let position = 0
 
-  const hasAbnormal = abnormalEntries.length > 0;
+    pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight)
+    heightLeft -= pageHeight
+
+    while (heightLeft > 0) {
+      position = heightLeft - imgHeight
+      pdf.addPage()
+      pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight)
+      heightLeft -= pageHeight
+    }
+
+    pdf.save(`hasil-mcu-${data.identitas.nama}.pdf`)
+  }
 
   return (
-    <div
-      id="mcu-result"
-      className="max-w-3xl mx-auto bg-white p-8 text-sm leading-relaxed"
-    >
-      {/* HEADER */}
-      <div className="text-center mb-6">
-        <h1 className="font-bold text-lg">RUMAH SAKIT TK. II ISKANDAR MUDA</h1>
-        <p className="font-semibold">MEDICAL CHECK UP</p>
+    <div className="p-6 bg-gray-100 min-h-screen">
 
-        <p className="mt-2 text-sm">
-          Status:{" "}
-          <span
-            className={
-              hasAbnormal
-                ? "text-yellow-700 font-semibold"
-                : "text-green-700 font-semibold"
-            }
-          >
-            {hasAbnormal ? "Perlu Perhatian" : "Normal"}
-          </span>
-        </p>
-        <div className="flex justify-end mb-4">
-          <button
-            onClick={handleDownloadPdf}
-            className="px-4 py-2 bg-blue-600 text-white rounded"
-          >
-            Download PDF
-          </button>
-        </div>
+      {/* BUTTON */}
+      <div className="max-w-3xl mx-auto mb-4 flex justify-end">
+        <button
+          onClick={handleDownloadPdf}
+          className="px-4 py-2 bg-blue-600 text-white rounded"
+        >
+          Download PDF
+        </button>
       </div>
 
-      {/* IDENTITAS */}
-      <div className="mb-6">
-        <h2 className="font-bold border-b pb-1 mb-2">I. IDENTITAS</h2>
+      {/* CONTENT */}
+      <div
+        id="mcu-result"
+        className="max-w-3xl mx-auto bg-white p-8 text-sm leading-relaxed"
+      >
 
-        <div className="grid grid-cols-2 gap-y-1">
-          <p>Nama</p>
-          <p>: {data.identitas.nama}</p>
-          <p>Jenis Kelamin</p>
-          <p>: {data.identitas.jenisKelamin}</p>
-          <p>TTL</p>
-          <p>: {data.identitas.ttl}</p>
-          <p>Alamat</p>
-          <p>: {data.identitas.alamat}</p>
-          <p>No HP</p>
-          <p>: {data.identitas.noHp}</p>
-          <p>Agama</p>
-          <p>: {data.identitas.agama}</p>
-          <p>BB/TB</p>
-          <p>: {data.identitas.bbTb}</p>
-          <p>Gol Darah</p>
-          <p>: {data.identitas.golDarah}</p>
+        {/* HEADER */}
+        <div className="text-center mb-6">
+          <h1 className="font-bold text-lg">
+            RUMAH SAKIT TK. II ISKANDAR MUDA
+          </h1>
+          <p className="font-semibold">MEDICAL CHECK UP</p>
+
+          <p className="mt-2 text-sm">
+            Status:{" "}
+            <span
+              className={
+                hasAbnormal
+                  ? "text-yellow-700 font-semibold"
+                  : "text-green-700 font-semibold"
+              }
+            >
+              {hasAbnormal ? "Perlu Perhatian" : "Normal"}
+            </span>
+          </p>
         </div>
-      </div>
 
-      {/* PEMERIKSAAN FISIK */}
-      <div className="mb-6">
-        <h2 className="font-bold border-b pb-1 mb-2">II. PEMERIKSAAN FISIK</h2>
+        {/* IDENTITAS */}
+        <div className="mb-6">
+          <h2 className="font-bold border-b pb-1 mb-2">I. IDENTITAS</h2>
 
-        <p className="font-semibold">Tanda Vital</p>
-
-        <div className="grid grid-cols-2 gap-y-1 mt-2">
-          <p>Tekanan Darah</p>
-          <p>: {data.tandaVital.tekananDarah}</p>
-          <p>Nadi</p>
-          <p>: {data.tandaVital.nadi}</p>
-          <p>Respirasi</p>
-          <p>: {data.tandaVital.respirasi}</p>
-          <p>Suhu</p>
-          <p>: {data.tandaVital.suhu}</p>
+          <div className="grid grid-cols-2 gap-y-1">
+            <p>Nama</p><p>: {data.identitas.nama}</p>
+            <p>Jenis Kelamin</p><p>: {data.identitas.jenisKelamin}</p>
+            <p>TTL</p><p>: {data.identitas.ttl}</p>
+            <p>Alamat</p><p>: {data.identitas.alamat}</p>
+            <p>No HP</p><p>: {data.identitas.noHp}</p>
+            <p>Agama</p><p>: {data.identitas.agama}</p>
+            <p>BB/TB</p><p>: {data.identitas.bbTb}</p>
+            <p>Gol Darah</p><p>: {data.identitas.golDarah}</p>
+          </div>
         </div>
-      </div>
 
-      {/* TABEL PEMERIKSAAN */}
-      <div className="mb-6">
-        <p className="font-semibold mb-2">Pemeriksaan</p>
+        {/* PEMERIKSAAN */}
+        <div className="mb-6">
+          <h2 className="font-bold border-b pb-1 mb-2">
+            II. PEMERIKSAAN FISIK
+          </h2>
 
-        <table className="w-full border text-xs">
-          <thead>
-            <tr className="border bg-slate-100">
-              <th className="border p-1">Bagian</th>
-              <th className="border p-1">Status</th>
-              <th className="border p-1">Keterangan</th>
-            </tr>
-          </thead>
-          <tbody>
-            {entries.map(([key, item], i) => (
-              <tr key={i} className="border">
-                <td className="border p-1 capitalize">{key}</td>
-
-                <td
-                  className={`border p-1 ${
+          <table className="w-full border text-xs">
+            <thead>
+              <tr className="border bg-slate-100">
+                <th className="border p-1">Bagian</th>
+                <th className="border p-1">Status</th>
+                <th className="border p-1">Keterangan</th>
+              </tr>
+            </thead>
+            <tbody>
+              {entries.map(([key, item], i) => (
+                <tr key={i}>
+                  <td className="border p-1 capitalize">{key}</td>
+                  <td className={`border p-1 ${
                     item.status === "Abnormal"
                       ? "text-red-600 font-semibold"
                       : "text-green-600"
-                  }`}
-                >
-                  {item.status}
-                </td>
-
-                <td className="border p-1">{item.keterangan || "-"}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      {/* HIGHLIGHT ABNORMAL (INI UPGRADE PENTING) */}
-      {hasAbnormal && (
-        <div className="mb-6">
-          <h2 className="font-bold border-b pb-1 mb-2 text-red-600">
-            TEMUAN PENTING
-          </h2>
-
-          <ul className="list-disc ml-5 text-sm">
-            {abnormalEntries.map(([key, item], i) => (
-              <li key={i}>
-                {key} - {item.keterangan}
-              </li>
-            ))}
-          </ul>
+                  }`}>
+                    {item.status}
+                  </td>
+                  <td className="border p-1">{item.keterangan || "-"}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
-      )}
 
-      {/* KESIMPULAN */}
-      <div className="mb-6">
-        <h2 className="font-bold border-b pb-1 mb-2">KESIMPULAN</h2>
+        {/* FOOTER */}
+        <div className="text-right mt-10">
+          <p>Banda Aceh, {approvedDate}</p>
 
-        <ol className="list-decimal ml-5">
-          {data.kesimpulan.map((k, i) => (
-            <li key={i}>{k}</li>
-          ))}
-        </ol>
-      </div>
+          <p className="mt-10 font-semibold">
+            {data.doctorName || "Dokter Pemeriksa"}
+          </p>
 
-      {/* SARAN */}
-      <div className="mb-6">
-        <h2 className="font-bold border-b pb-1 mb-2">SARAN</h2>
+          <p className="text-xs text-gray-500">
+            Dokter Pemeriksa
+          </p>
+        </div>
 
-        <ol className="list-decimal ml-5">
-          {data.saran.map((s, i) => (
-            <li key={i}>{s}</li>
-          ))}
-        </ol>
-      </div>
-
-      {/* FOOTER */}
-      <div className="text-right mt-10">
-        <p>Banda Aceh, ...</p>
-        <p className="mt-8 font-semibold">Dokter Pemeriksa</p>
       </div>
     </div>
-  );
+  )
 }

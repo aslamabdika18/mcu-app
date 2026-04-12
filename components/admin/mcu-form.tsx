@@ -50,8 +50,6 @@ type Props = {
     }) => void
 
     submitLabel: string
-
-    // 🔥 optional (lebih fleksibel)
     backUrl?: string
 }
 
@@ -65,7 +63,6 @@ export function McuForm({
     backUrl,
 }: Props) {
 
-    // ✅ FIX: hook di dalam component
     const router = useRouter()
 
     const [data, setData] = useState<MCUData>(initialData)
@@ -145,7 +142,6 @@ export function McuForm({
                         </p>
                     </div>
 
-                    {/* ✅ tombol kembali clean */}
                     <Button
                         variant="outline"
                         onClick={() => router.push(backUrl ?? "/admin/mcu")}
@@ -154,22 +150,16 @@ export function McuForm({
                     </Button>
                 </div>
 
-                {/* DTO */}
+                {/* DATA UTAMA */}
                 <div className="bg-white p-6 rounded-xl border space-y-4">
                     <h2 className="font-semibold border-b pb-2">DATA UTAMA</h2>
 
                     <Field label="NIK">
-                        <Input
-                            value={nik}
-                            onChange={(e) => setNik(e.target.value)}
-                        />
+                        <Input value={nik} onChange={(e) => setNik(e.target.value)} />
                     </Field>
 
                     <Field label="Email">
-                        <Input
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                        />
+                        <Input value={email} onChange={(e) => setEmail(e.target.value)} />
                     </Field>
                 </div>
 
@@ -227,6 +217,20 @@ export function McuForm({
                             <Input
                                 value={data.identitas.golDarah}
                                 onChange={(e) => updateIdentitas("golDarah", e.target.value)}
+                            />
+                        </Field>
+
+                        {/* 🔥 TAMBAHAN PALING PENTING */}
+                        <Field label="Nama Dokter Pemeriksa" className="md:col-span-2">
+                            <Input
+                                placeholder="dr. Andika Pratama"
+                                value={data.doctorName || ""}
+                                onChange={(e) =>
+                                    setData({
+                                        ...data,
+                                        doctorName: e.target.value,
+                                    })
+                                }
                             />
                         </Field>
 

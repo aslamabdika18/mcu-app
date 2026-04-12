@@ -89,7 +89,8 @@ export default function MCUPage() {
 
   const handleSendEmail = (item: McuRecord) => {
     const promise = (async () => {
-      await fetch("/api/mcu/send-mcu-email", {
+
+      const res = await fetch("/api/mcu/send-mcu-email", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -99,10 +100,15 @@ export default function MCUPage() {
         }),
       })
 
+      if (!res.ok) {
+        throw new Error("Email gagal dikirim")
+      }
+
       await supabase
         .from("mcu")
         .update({ email_sent: true })
         .eq("id", item.id)
+
     })()
 
     toast.promise(promise, {
@@ -213,17 +219,15 @@ export default function MCUPage() {
                           </Button>
                         )}
 
-                        {item.status === "approved" && !item.email_sent && (
+                        {item.status === "approved" && (
                           <Button
                             size="sm"
-                            variant="outline"
+                            variant={item.email_sent ? "secondary" : "outline"}
                             onClick={() => handleSendEmail(item)}
                           >
-                            Kirim Email
+                            {item.email_sent ? "Kirim Ulang" : "Kirim Email"}
                           </Button>
                         )}
-
-                        {/* 🔥 TAMBAH INI */}
                         <DeleteButton
                           id={item.id}
                           onDelete={(id) => {
