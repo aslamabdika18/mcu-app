@@ -4,8 +4,6 @@ import { useEffect, useState } from "react"
 import { getMcuByToken } from "@/lib/mcu"
 import { MCUData, PemeriksaanItem, McuRecord } from "@/types/mcu"
 import { useParams } from "next/navigation"
-import { toast } from "sonner"
-import { PDFDocument, StandardFonts, rgb } from "pdf-lib"
 
 export default function ResultPage() {
   const params = useParams()
@@ -51,107 +49,19 @@ export default function ResultPage() {
     : "-"
 
   // 🔥 DOWNLOAD PDF FIX
+  const handleDownloadPdf = async () => {
+  const res = await fetch("/api/pdf", {
+    method: "POST",
+    body: JSON.stringify({ token }),
+  })
 
-const handleDownloadPdf = async () => {
-  try {
-    const pdfDoc = await PDFDocument.create()
-    const page = pdfDoc.addPage([595, 842]) // A4
+  const blob = await res.blob()
+  const url = URL.createObjectURL(blob)
 
-    const font = await pdfDoc.embedFont(StandardFonts.Helvetica)
-    const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold)
-
-    let y = 800
-
-    const draw = (text: string, x = 50, size = 10, bold = false) => {
-      page.drawText(text, {
-        x,
-        y,
-        size,
-        font: bold ? boldFont : font,
-        color: rgb(0, 0, 0),
-      })
-      y -= 15
-    }
-
-    // ================= HEADER =================
-    draw("RUMAH SAKIT TK. II ISKANDAR MUDA", 120, 12, true)
-    draw("MEDICAL CHECK UP", 200, 11, true)
-
-    y -= 10
-
-    draw(
-      `Status: ${hasAbnormal ? "Perlu Perhatian" : "Normal"}`,
-      50,
-      10,
-      true
-    )
-
-    y -= 10
-
-    // ================= IDENTITAS =================
-    draw("I. IDENTITAS", 50, 11, true)
-
-    draw(`NIK: ${record.nik}`)
-    draw(`Email: ${record.email}`)
-    draw(`Nama: ${data.identitas.nama}`)
-    draw(`Jenis Kelamin: ${data.identitas.jenisKelamin}`)
-    draw(`TTL: ${data.identitas.ttl}`)
-    draw(`Alamat: ${data.identitas.alamat}`)
-    draw(`No HP: ${data.identitas.noHp}`)
-    draw(`Agama: ${data.identitas.agama}`)
-    draw(`BB/TB: ${data.identitas.bbTb}`)
-    draw(`Gol Darah: ${data.identitas.golDarah}`)
-
-    y -= 10
-
-    // ================= PEMERIKSAAN =================
-    draw("II. PEMERIKSAAN FISIK", 50, 11, true)
-
-    Object.entries(data.pemeriksaanFisik).forEach(([key, val]) => {
-      draw(`${key.toUpperCase()} : ${val.status} (${val.keterangan})`)
-    })
-
-    y -= 10
-
-    // ================= KESIMPULAN =================
-    draw("KESIMPULAN", 50, 11, true)
-    data.kesimpulan.forEach((k) => draw(`- ${k}`))
-
-    y -= 10
-
-    // ================= SARAN =================
-    draw("SARAN", 50, 11, true)
-    data.saran.forEach((s) => draw(`- ${s}`))
-
-    y -= 20
-
-    // ================= FOOTER =================
-    draw(`Banda Aceh, ${approvedDate}`, 350)
-    y -= 30
-    draw(`${data.doctorName || "-"}`, 350, 10, true)
-    draw("Dokter Pemeriksa", 350)
-
-    // ================= SAVE =================
-    const pdfBytes = await pdfDoc.save()
-
-    const buffer = pdfBytes.buffer.slice(
-      pdfBytes.byteOffset,
-      pdfBytes.byteOffset + pdfBytes.byteLength
-    ) as ArrayBuffer
-
-    const blob = new Blob([buffer], { type: "application/pdf" })
-
-    const url = URL.createObjectURL(blob)
-
-    const a = document.createElement("a")
-    a.href = url
-    a.download = `hasil-mcu-${data.identitas.nama}.pdf`
-    a.click()
-
-  } catch (err) {
-    console.error("PDF ERROR:", err)
-    toast.error("Gagal membuat PDF")
-  }
+  const a = document.createElement("a")
+  a.href = url
+  a.download = "hasil-mcu.pdf"
+  a.click()
 }
 
   return (
