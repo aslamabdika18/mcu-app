@@ -6,6 +6,7 @@ import { supabase } from "@/lib/supabase"
 import { MCUData } from "@/types/mcu"
 import { toast } from "sonner"
 import QRCode from "qrcode"
+import { McuResultView } from "@/components/admin/mcu-result-view"
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {
@@ -28,12 +29,16 @@ type McuRecord = {
   status: string
   email_sent: boolean
   data: MCUData | null
+
+  approved_at?: string
+  updated_at?: string
 }
 
 export default function MCUPage() {
   const [mcuData, setMcuData] = useState<McuRecord[]>([])
   const [qrMap, setQrMap] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(true)
+  const [selected, setSelected] = useState<McuRecord | null>(null)
 
   const fetchData = async (): Promise<McuRecord[]> => {
     const { data } = await supabase
@@ -209,6 +214,14 @@ export default function MCUPage() {
                       </TableCell>
 
                       <TableCell className="text-right space-x-2">
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          onClick={() => setSelected(item)}
+                        >
+                          Lihat
+                        </Button>
+
                         <Button size="sm" asChild>
                           <Link href={`/admin/mcu/edit/${item.id}`}>Edit</Link>
                         </Button>
@@ -244,6 +257,38 @@ export default function MCUPage() {
 
         </CardContent>
       </Card>
+
+      {selected && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+
+          <div className="bg-white w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-lg p-4">
+
+            {/* HEADER */}
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="font-semibold text-lg">Detail MCU</h2>
+
+              <Button variant="outline" onClick={() => setSelected(null)}>
+                Kembali
+              </Button>
+            </div>
+
+            {/* CONTENT */}
+            {selected && selected.data && (
+              <McuResultView
+                record={{
+                  id: selected.id,
+                  nik: selected.nik,
+                  email: selected.email,
+                  data: selected.data,
+                  approved_at: selected.approved_at,
+                  updated_at: selected.updated_at,
+                }}
+              />
+            )}
+
+          </div>
+        </div>
+      )}
 
     </div>
   )

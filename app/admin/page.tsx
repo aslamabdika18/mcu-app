@@ -12,10 +12,6 @@ import {
   CardTitle
 } from "@/components/ui/card"
 
-type MCU = {
-  status: string
-}
-
 export default function AdminDashboard() {
   const [total, setTotal] = useState(0)
   const [approved, setApproved] = useState(0)
