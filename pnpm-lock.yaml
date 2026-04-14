@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      '@sparticuz/chromium':
+        specifier: ^147.0.0
+        version: 147.0.0
       '@supabase/supabase-js':
         specifier: ^2.101.1
         version: 2.101.1
@@ -1520,6 +1523,10 @@ packages:
     resolution: {integrity: sha512-tlqY9xq5ukxTUZBmoOp+m61cqwQD5pHJtFY3Mn8CA8ps6yghLH/Hw8UPdqg4OLmFW3IFlcXnQNmo/dh8HzXYIQ==}
     engines: {node: '>=18'}
 
+  '@sparticuz/chromium@147.0.0':
+    resolution: {integrity: sha512-4ZKeAQQa8up2mt675qSitztLdbQrlf8BKdC5naeap+5Mv1OV1OlJdPoU+EJC/p5sQUJUQmN4r+q5+EhaaOUHpQ==}
+    engines: {node: '>=20.11.0'}
+
   '@stablelib/base64@1.0.1':
     resolution: {integrity: sha512-1bnPQqSxSuc3Ii6MhBysoWCg58j97aUjuCSZrGSmDxNqtytIi0k8utUenAwTZN4V5mXXYGsVUI9zeBqy+jBOSQ==}
 
@@ -2681,6 +2688,15 @@ packages:
 
   flatted@3.3.4:
     resolution: {integrity: sha512-3+mMldrTAPdta5kjX2G2J7iX4zxtnwpdA8Tr2ZSjkyPSanvbZAcy6flmtnXbEybHrDcU9641lxrMfFuUxVz9vA==}
+
+  follow-redirects@1.16.0:
+    resolution: {integrity: sha512-y5rN/uOsadFT/JfYwhxRS5R7Qce+g3zG97+JrtFZlC9klX/W5hD7iiLzScI4nZqUS7DNUdhPgw4xI8W2LuXlUw==}
+    engines: {node: '>=4.0'}
+    peerDependencies:
+      debug: '*'
+    peerDependenciesMeta:
+      debug:
+        optional: true
 
   for-each@0.3.5:
     resolution: {integrity: sha512-dKx12eRCVIzqCxFGplyFKJMPvLEWgmNtUrpTiJIR5u97zEhRG8ySrtboPHZXx7daLxQVrl643cTzbab2tkQjxg==}
@@ -5789,6 +5805,16 @@ snapshots:
 
   '@sindresorhus/merge-streams@4.0.0': {}
 
+  '@sparticuz/chromium@147.0.0':
+    dependencies:
+      follow-redirects: 1.16.0
+      tar-fs: 3.1.2
+    transitivePeerDependencies:
+      - bare-abort-controller
+      - bare-buffer
+      - debug
+      - react-native-b4a
+
   '@stablelib/base64@1.0.1': {}
 
   '@supabase/auth-js@2.101.1':
@@ -7136,6 +7162,8 @@ snapshots:
       keyv: 4.5.4
 
   flatted@3.3.4: {}
+
+  follow-redirects@1.16.0: {}
 
   for-each@0.3.5:
     dependencies:
