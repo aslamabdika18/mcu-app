@@ -17,6 +17,7 @@ export default async function Page({
     if (error || !record) {
         console.error("ERROR:", error)
         console.error("DATA:", data)
+        console.log("TOKEN PARAM:", params.token)
         return <div>Data tidak ditemukan</div>
     }
 

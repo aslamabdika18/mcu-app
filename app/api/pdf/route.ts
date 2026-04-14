@@ -28,7 +28,7 @@ export async function POST(req: Request) {
         pdf.byteOffset,
         pdf.byteOffset + pdf.byteLength
     ) as ArrayBuffer
-
+    console.log("TOKEN API:", token)
     return new Response(buffer, {
         headers: {
             "Content-Type": "application/pdf",
