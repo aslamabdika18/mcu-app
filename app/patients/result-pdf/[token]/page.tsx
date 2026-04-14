@@ -4,20 +4,23 @@ import McuResultView from "@/components/McuResultView"
 export default async function Page({
     params,
 }: {
-    params: { token: string }
+    params: Promise<{ token: string }>
 }) {
+    // 🔥 WAJIB
+    const { token } = await params
 
     const { data, error } = await supabaseServer
         .from("mcu")
         .select("*")
-        .eq("access_token", params.token)
+        .eq("access_token", token)
 
     const record = data?.[0]
 
     if (error || !record) {
         console.error("ERROR:", error)
         console.error("DATA:", data)
-        console.log("TOKEN PARAM:", params.token)
+        console.log("TOKEN:", token)
+
         return <div>Data tidak ditemukan</div>
     }
 
