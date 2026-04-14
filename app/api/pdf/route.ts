@@ -1,17 +1,21 @@
-import puppeteer from "puppeteer"
+import puppeteer from "puppeteer-core"
+import chromium from "@sparticuz/chromium"
 
 export async function POST(req: Request) {
     const { token } = await req.json()
 
-    const url = `${process.env.NEXT_PUBLIC_BASE_URL}/patients/result/${token}`
+    const url = `${process.env.NEXT_PUBLIC_BASE_URL}/patients/result-pdf/${token}`
 
     const browser = await puppeteer.launch({
-        headless: true, // ✅ FIX
+        args: chromium.args,
+        defaultViewport: null,
+        executablePath: await chromium.executablePath(),
+        headless: true,
     })
 
     const page = await browser.newPage()
 
-    await page.goto(url, { waitUntil: "networkidle0" })
+    await page.goto(url, { waitUntil: "domcontentloaded" })
 
     const pdf = await page.pdf({
         format: "A4",
@@ -20,7 +24,6 @@ export async function POST(req: Request) {
 
     await browser.close()
 
-    // ✅ FIX TYPE
     const buffer = pdf.buffer.slice(
         pdf.byteOffset,
         pdf.byteOffset + pdf.byteLength

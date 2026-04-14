@@ -1,16 +1,6 @@
 import { supabase } from "@/lib/supabase"
-import { CreateMcuDTO, MCUData } from "@/types/mcu"
-
-export interface McuRecord {
-  id: string
-  nik: string
-  email: string
-  ttl: string
-  data: MCUData
-  access_token: string
-  added_by: string | null
-  created_at: string
-}
+import { CreateMcuDTO } from "@/types/mcu"
+import { McuRecord } from "@/types/mcu"
 
 function generateToken() {
   if (typeof crypto !== "undefined" && crypto.randomUUID) {
