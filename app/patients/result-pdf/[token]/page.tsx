@@ -26,7 +26,7 @@ export default async function Page({
 
     return (
         <div className="bg-white">
-            <div className="w-[210mm] min-h-[297mm] mx-auto p-[20mm]">
+            <div className="w-[210mm] mx-auto px-[12mm] py-[8mm] leading-tight">
                 <McuResultView record={record} />
             </div>
         </div>
