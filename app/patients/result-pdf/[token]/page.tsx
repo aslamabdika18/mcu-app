@@ -7,14 +7,16 @@ export default async function Page({
     params: { token: string }
 }) {
 
-    const { data: record, error } = await supabaseServer
+    const { data, error } = await supabaseServer
         .from("mcu")
         .select("*")
         .eq("access_token", params.token)
-        .single()
+
+    const record = data?.[0]
 
     if (error || !record) {
-        console.error("ERROR PDF:", error)
+        console.error("ERROR:", error)
+        console.error("DATA:", data)
         return <div>Data tidak ditemukan</div>
     }
 
