@@ -91,8 +91,8 @@ export default function McuResultView({ record }: Props) {
                                 <td className="border p-1 capitalize">{key}</td>
                                 <td
                                     className={`border p-1 ${item.status === "Abnormal"
-                                            ? "text-red-600 font-semibold"
-                                            : "text-green-600"
+                                        ? "text-red-600 font-semibold"
+                                        : "text-green-600"
                                         }`}
                                 >
                                     {item.status}
@@ -110,7 +110,16 @@ export default function McuResultView({ record }: Props) {
             <div className="text-right mt-10">
                 <p>Banda Aceh, {approvedDate}</p>
 
-                <p className="mt-10 font-semibold">
+                {/* QR / TTD */}
+                <div className="mt-4 flex justify-end">
+                    <img
+                        src="/ttd-dokter.png"
+                        alt="TTD Dokter"
+                        className="w-25 h-25 object-contain"
+                    />
+                </div>
+
+                <p className="mt-2 font-semibold">
                     {data.doctorName || "Dokter Pemeriksa"}
                 </p>
 
